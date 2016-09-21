@@ -91,7 +91,7 @@ class MockBuilderIntegrationTest extends TestCase
 
         $client = $this->server->getClient();
 
-        $this->assertSame('response body', (string) $client->post('/foo')->send()->getBody());
+        $this->assertSame('response body', (string) $client->post('/foo')->getBody());
 
         $this->assertContains('CLOSURE MATCHER: POST /foo', $this->server->getErrorOutput());
     }
@@ -118,9 +118,9 @@ class MockBuilderIntegrationTest extends TestCase
             ->end();
         $this->server->setUp($this->builder->flushExpectations());
 
-        $this->assertSame('POST 1', (string) $this->server->getClient()->post('/post-resource-1')->send()->getBody());
-        $this->assertSame('POST 2', (string) $this->server->getClient()->post('/post-resource-2')->send()->getBody());
-        $this->assertSame('POST 1', (string) $this->server->getClient()->post('/post-resource-1')->send()->getBody());
-        $this->assertSame('POST 2', (string) $this->server->getClient()->post('/post-resource-2')->send()->getBody());
+        $this->assertSame('POST 1', (string) $this->server->getClient()->post('/post-resource-1')->getBody());
+        $this->assertSame('POST 2', (string) $this->server->getClient()->post('/post-resource-2')->getBody());
+        $this->assertSame('POST 1', (string) $this->server->getClient()->post('/post-resource-1')->getBody());
+        $this->assertSame('POST 2', (string) $this->server->getClient()->post('/post-resource-2')->getBody());
     }
 }

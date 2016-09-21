@@ -2,11 +2,11 @@
 namespace InterNations\Component\HttpMock;
 
 use Countable;
-use Guzzle\Http\ClientInterface;
-use Guzzle\Http\Message\EntityEnclosingRequestInterface;
-use Guzzle\Http\Message\RequestFactory;
-use Guzzle\Http\Message\RequestInterface;
-use Guzzle\Http\Message\Response;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Message\MessageFactory;
+use GuzzleHttp\Message\RequestInterface;
+use GuzzleHttp\Message\Response;
+use GuzzleHttp\Post\PostBodyInterface;
 use InterNations\Component\HttpMock\Request\UnifiedRequest;
 use UnexpectedValueException;
 
@@ -71,10 +71,9 @@ class RequestCollectionFacade implements Countable
     public function count()
     {
         $response = $this->client
-            ->get('/_request/count')
-            ->send();
+            ->get('/_request/count');
 
-        return (int) $response->getBody(true);
+        return (int) $response->getBody()->getContents();
     }
 
     /**
@@ -95,7 +94,8 @@ class RequestCollectionFacade implements Countable
             );
         }
 
-        $request = RequestFactory::getInstance()->fromMessage($requestInfo['request']);
+        $factory = new MessageFactory();
+        $request = $factory->fromMessage($requestInfo['request']);
         $params = $this->configureRequest(
             $request,
             $requestInfo['server'],
@@ -116,7 +116,10 @@ class RequestCollectionFacade implements Countable
         }
 
         if (isset($server['PHP_AUTH_USER'])) {
-            $request->setAuth($server['PHP_AUTH_USER'], isset($server['PHP_AUTH_PW']) ? $server['PHP_AUTH_PW'] : null);
+            $request->setHeader('Php-Auth-User', $server['PHP_AUTH_USER']);
+            if(isset($server['PHP_AUTH_PW'])) {
+                $request->setHeader('Php-Auth-Pw', $server['PHP_AUTH_PW']);
+            }
         }
 
         $params = [];
@@ -125,8 +128,9 @@ class RequestCollectionFacade implements Countable
             $params['userAgent'] = $server['HTTP_USER_AGENT'];
         }
 
-        if ($request instanceof EntityEnclosingRequestInterface) {
-            $request->addPostFields($enclosure);
+        $body = $request->getBody();
+        if ($body instanceof PostBodyInterface) {
+            $body->replaceFields($enclosure);
         }
 
         return $params;
@@ -135,8 +139,7 @@ class RequestCollectionFacade implements Countable
     private function getRecordedRequest($path)
     {
         $response = $this->client
-            ->get($path)
-            ->send();
+            ->get($path);
 
         return $this->parseResponse($response, $path);
     }
@@ -144,15 +147,14 @@ class RequestCollectionFacade implements Countable
     private function deleteRecordedRequest($path)
     {
         $response = $this->client
-            ->delete($path)
-            ->send();
+            ->delete($path);
 
         return $this->parseResponse($response, $path);
     }
 
     private function parseResponse(Response $response, $path)
     {
-        $statusCode = $response->getStatusCode();
+        $statusCode = intval($response->getStatusCode());
 
         if ($statusCode !== 200) {
             throw new UnexpectedValueException(
@@ -161,7 +163,7 @@ class RequestCollectionFacade implements Countable
         }
 
         $contentType = $response->hasHeader('content-type')
-            ? $response->getContentType()
+            ? $response->getHeader('content-type')
             : '';
 
         if (substr($contentType, 0, 10) !== 'text/plain') {
