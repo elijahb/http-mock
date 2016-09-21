@@ -1,13 +1,10 @@
 <?php
 namespace InterNations\Component\HttpMock\Request;
 
-use BadMethodCallException;
 use GuzzleHttp\Collection;
 use GuzzleHttp\Message\RequestInterface;
-use GuzzleHttp\Post\PostBodyInterface;
 use GuzzleHttp\Query;
 use GuzzleHttp\Stream\StreamInterface;
-use GuzzleHttp\Url;
 
 class UnifiedRequest
 {
@@ -57,6 +54,7 @@ class UnifiedRequest
     public function getPostField($field)
     {
         parse_str($this->wrapped->getBody(), $fields);
+
         return $fields[$field];
     }
 
@@ -122,7 +120,7 @@ class UnifiedRequest
      */
     public function getRawHeaders()
     {
-        return join("\n", $this->wrapped->getHeaders());
+        return implode("\n", $this->wrapped->getHeaders());
     }
 
     /**

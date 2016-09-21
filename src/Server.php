@@ -7,7 +7,6 @@ use GuzzleHttp\Exception\RequestException;
 use hmmmath\Fibonacci\FibonacciFactory;
 use Symfony\Component\Process\Process;
 use RuntimeException;
-use GuzzleHttp\Exception\CurlException;
 
 class Server extends Process
 {
@@ -50,9 +49,7 @@ class Server extends Process
 
     private function createClient()
     {
-        $client = new Client([
-            'base_url' => $this->getBaseUrl()
-        ]);
+        $client = new Client(['base_url' => $this->getBaseUrl()]);
         $client->getEmitter()->on(
             'error',
             static function (EventInterface $event) {
@@ -90,6 +87,7 @@ class Server extends Process
                 ]
             );
             $response = $this->getClient()->send($request);
+
             if (intval($response->getStatusCode()) !== 201) {
                 throw new RuntimeException('Could not set up expectations');
             }

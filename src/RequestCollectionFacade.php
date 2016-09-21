@@ -117,7 +117,8 @@ class RequestCollectionFacade implements Countable
 
         if (isset($server['PHP_AUTH_USER'])) {
             $request->setHeader('Php-Auth-User', $server['PHP_AUTH_USER']);
-            if(isset($server['PHP_AUTH_PW'])) {
+
+            if (isset($server['PHP_AUTH_PW'])) {
                 $request->setHeader('Php-Auth-Pw', $server['PHP_AUTH_PW']);
             }
         }
@@ -129,6 +130,7 @@ class RequestCollectionFacade implements Countable
         }
 
         $body = $request->getBody();
+
         if ($body instanceof PostBodyInterface) {
             $body->replaceFields($enclosure);
         }
