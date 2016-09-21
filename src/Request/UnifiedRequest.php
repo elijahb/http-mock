@@ -2,14 +2,12 @@
 namespace InterNations\Component\HttpMock\Request;
 
 use BadMethodCallException;
-use Guzzle\Common\Collection;
-use Guzzle\Http\EntityBodyInterface;
-use Guzzle\Http\Message\EntityEnclosingRequestInterface;
-use Guzzle\Http\Message\Header;
-use Guzzle\Http\Message\Header\HeaderCollection;
-use Guzzle\Http\Message\RequestInterface;
-use Guzzle\Http\QueryString;
-use Guzzle\Http\Url;
+use GuzzleHttp\Collection;
+use GuzzleHttp\Message\RequestInterface;
+use GuzzleHttp\Post\PostBodyInterface;
+use GuzzleHttp\Query;
+use GuzzleHttp\Stream\StreamInterface;
+use GuzzleHttp\Url;
 
 class UnifiedRequest
 {
@@ -42,11 +40,11 @@ class UnifiedRequest
     /**
      * Get the body of the request if set
      *
-     * @return EntityBodyInterface|null
+     * @return StreamInterface|null
      */
     public function getBody()
     {
-        return $this->invokeWrappedIfEntityEnclosed(__FUNCTION__, func_get_args());
+        return $this->wrapped->getBody();
     }
 
     /**
@@ -58,39 +56,8 @@ class UnifiedRequest
      */
     public function getPostField($field)
     {
-        return $this->invokeWrappedIfEntityEnclosed(__FUNCTION__, func_get_args());
-    }
-
-    /**
-     * Get the post fields that will be used in the request
-     *
-     * @return QueryString
-     */
-    public function getPostFields()
-    {
-        return $this->invokeWrappedIfEntityEnclosed(__FUNCTION__, func_get_args());
-    }
-
-    /**
-     * Returns an associative array of POST field names to PostFileInterface objects
-     *
-     * @return array
-     */
-    public function getPostFiles()
-    {
-        return $this->invokeWrappedIfEntityEnclosed(__FUNCTION__, func_get_args());
-    }
-
-    /**
-     * Get a POST file from the request
-     *
-     * @param string $fieldName POST fields to retrieve
-     *
-     * @return array|null Returns an array wrapping an array of PostFileInterface objects
-     */
-    public function getPostFile($fieldName)
-    {
-        return $this->invokeWrappedIfEntityEnclosed(__FUNCTION__, func_get_args());
+        parse_str($this->wrapped->getBody(), $fields);
+        return $fields[$field];
     }
 
     /**
@@ -98,9 +65,9 @@ class UnifiedRequest
      *
      * @return Collection
      */
-    public function getParams()
+    public function getConfig()
     {
-        return $this->wrapped->getParams();
+        return $this->wrapped->getConfig();
     }
 
     /**
@@ -108,7 +75,7 @@ class UnifiedRequest
      *
      * @param string $header Header to retrieve.
      *
-     * @return Header|null Returns NULL if no matching header is found.
+     * @return string|null Returns NULL if no matching header is found.
      *                     Returns a Header object if found.
      */
     public function getHeader($header)
@@ -119,7 +86,7 @@ class UnifiedRequest
     /**
      * Get all headers as a collection
      *
-     * @return HeaderCollection
+     * @return array
      */
     public function getHeaders()
     {
@@ -133,7 +100,7 @@ class UnifiedRequest
      */
     public function getHeaderLines()
     {
-        return $this->wrapped->getHeaderLines();
+        return $this->wrapped->getHeaders();
     }
 
     /**
@@ -155,14 +122,14 @@ class UnifiedRequest
      */
     public function getRawHeaders()
     {
-        return $this->wrapped->getRawHeaders();
+        return join("\n", $this->wrapped->getHeaders());
     }
 
     /**
      * Get the collection of key value pairs that will be used as the query
      * string in the request
      *
-     * @return QueryString
+     * @return Query
      */
     public function getQuery()
     {
@@ -236,7 +203,7 @@ class UnifiedRequest
      */
     public function getUsername()
     {
-        return $this->wrapped->getUsername();
+        return $this->wrapped->getHeader('Php-Auth-User');
     }
 
     /**
@@ -246,59 +213,19 @@ class UnifiedRequest
      */
     public function getPassword()
     {
-        return $this->wrapped->getPassword();
+        return $this->wrapped->getHeader('Php-Auth-Pw');
     }
 
     /**
      * Get the full URL of the request (e.g. 'http://www.guzzle-project.com/')
      * scheme://username:password@domain:port/path?query_string#fragment
      *
-     * @param boolean $asObject Set to TRUE to retrieve the URL as a clone of the URL object owned by the request.
      *
-     * @return string|Url
+     * @return string
      */
-    public function getUrl($asObject = false)
+    public function getUrl()
     {
-        return $this->wrapped->getUrl($asObject);
-    }
-
-    /**
-     * Get an array of Cookies
-     *
-     * @return array
-     */
-    public function getCookies()
-    {
-        return $this->wrapped->getCookies();
-    }
-
-    /**
-     * Get a cookie value by name
-     *
-     * @param string $name Cookie to retrieve
-     *
-     * @return null|string
-     */
-    public function getCookie($name)
-    {
-        return $this->wrapped->getCookie($name);
-    }
-
-    protected function invokeWrappedIfEntityEnclosed($method, array $params = [])
-    {
-        if (!$this->wrapped instanceof EntityEnclosingRequestInterface) {
-            throw new BadMethodCallException(
-                sprintf(
-                    'Cannot call method "%s" on a request that does not enclose an entity.'
-                    . ' Did you expect a POST/PUT request instead of %s %s?',
-                    $method,
-                    $this->wrapped->getMethod(),
-                    $this->wrapped->getPath()
-                )
-            );
-        }
-
-        return call_user_func_array([$this->wrapped, $method], $params);
+        return $this->wrapped->getUrl();
     }
 
     private function init(array $params)
